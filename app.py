@@ -5,19 +5,15 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import httpx
 import re
-import traceback
 
 app = FastAPI()
 
-# 首页路由，返回 chat.html
 @app.get("/")
 async def root():
     return FileResponse("chat.html")
 
-# 挂载静态文件
 app.mount("/", StaticFiles(directory="."), name="static")
 
-# 跨域配置
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -36,20 +32,16 @@ MODEL = "ep-20260417123409-bfnq9"
 BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
 # ===========================================================
 
-# 数学计算
 def calculate(expr):
     try:
         expr = re.sub(r'[^0-9+\-*/().]', '', expr)
         return f"🧮 结果：{expr} = {eval(expr)}"
-    except Exception as e:
-        print(f"计算错误: {str(e)}")
+    except:
         return "❌ 算不出来哦"
 
-# 模拟天气
 def weather(text):
     return "🌤️ 今天天气晴朗，适合出门～"
 
-# 调用豆包 API（带完整错误日志）
 async def chat_with_doubao(msg, history):
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -74,21 +66,12 @@ async def chat_with_doubao(msg, history):
     }
 
     try:
-        print("正在调用豆包 API...")
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(f"{BASE_URL}/chat/completions", headers=headers, json=payload)
-            print(f"API 响应状态码: {resp.status_code}")
-            print(f"API 响应内容: {resp.text}")
-            
-            if resp.status_code != 200:
-                return f"💔 API 调用失败，状态码: {resp.status_code}，错误信息: {resp.text}"
-                
             data = resp.json()
             return data["choices"][0]["message"]["content"]
     except Exception as e:
-        print(f"API 调用异常: {str(e)}")
-        print(f"异常堆栈: {traceback.format_exc()}")
-        return f"💔 API 调用异常: {str(e)}"
+        return f"💔 出错：{str(e)}"
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
