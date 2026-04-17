@@ -157,7 +157,6 @@ async function sendMsg() {
     const loading = addMsg('正在思考中...', 'loading');
 
     try {
-        // 🔥 修复：线上部署用相对路径，不写死 localhost
         const res = await fetch('/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -177,7 +176,7 @@ async function sendMsg() {
         addMsg(data.reply, 'ai');
     } catch (e) {
         chatBox.removeChild(loading);
-        addMsg('💔 连接失败，请检查后端是否启动', 'ai');
+        addMsg('💔 连接失败', 'ai');
     }
 }
 
@@ -186,12 +185,8 @@ function addMsg(text, cls) {
     div.className = 'message ' + cls;
     div.innerText = text;
     chatBox.appendChild(div);
-    scrollToBottom();
-    return div;
-}
-
-function scrollToBottom() {
     chatBox.scrollTop = chatBox.scrollHeight;
+    return div;
 }
 
 function showHearts() {
