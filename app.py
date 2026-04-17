@@ -1,11 +1,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import httpx
 import re
-import datetime
 
 app = FastAPI()
+
+# 🔥 关键：Vercel 必须用这个方式定义根路由，确保返回 chat.html
+@app.get("/")
+async def read_root():
+    return FileResponse("chat.html")
+
+# 挂载静态文件，确保前端能加载
+app.mount("/", StaticFiles(directory="."), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,11 +28,11 @@ class ChatRequest(BaseModel):
     msg: str
     history: list = []
 
-# ====================== 在这里填你的 API 信息 ======================
+# ====================== 你的 API 信息 ======================
 API_KEY = "ark-63e744bb-7c89-4310-ba55-ce73394833c1-5fdc4"
 MODEL = "ep-20260417123409-bfnq9"
 BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
-# ===================================================================
+# ===========================================================
 
 # 数学计算
 def calculate(expr):
@@ -37,7 +46,7 @@ def calculate(expr):
 def weather(text):
     return "🌤️ 今天天气晴朗，适合出门～"
 
-# 调用豆包 API（带记忆）
+# 调用豆包 API
 async def chat_with_doubao(msg, history):
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -48,7 +57,6 @@ async def chat_with_doubao(msg, history):
         {"role": "system", "content": "你是一个温柔、可爱、简洁的AI小助手，会记住对话内容。"}
     ]
 
-    # 把历史对话加进去（记忆核心）
     for h in history[-6:]:
         messages.append({"role": "user", "content": h["user"]})
         messages.append({"role": "assistant", "content": h["ai"]})
@@ -75,17 +83,15 @@ async def chat(req: ChatRequest):
     msg = req.msg.strip()
     history = req.history
 
-    # 计算
     if any(k in msg for k in "+-*/") or "计算" in msg:
         return {"reply": calculate(msg)}
-    # 天气
     elif "天气" in msg:
         return {"reply": weather(msg)}
-    # 豆包AI（带记忆）
     else:
         reply = await chat_with_doubao(msg, history)
         return {"reply": reply}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+# 🔥 部署专用：Vercel 不需要本地 uvicorn 启动命令，这里可以直接注释掉
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
