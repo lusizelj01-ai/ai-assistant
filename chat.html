@@ -137,10 +137,8 @@ const chatBox = document.getElementById('chatBox');
 const msgInput = document.getElementById('msgInput');
 const heartArea = document.getElementById('heartArea');
 
-// 聊天历史（给AI记忆用）
 let chatHistory = [];
 
-// 回车发送
 msgInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') sendMsg();
 });
@@ -159,18 +157,18 @@ async function sendMsg() {
     const loading = addMsg('正在思考中...', 'loading');
 
     try {
-        const res = await fetch('http://127.0.0.1:8000/chat', {
+        // 🔥 修复：线上部署用相对路径，不写死 localhost
+        const res = await fetch('/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 msg: text,
-                history: chatHistory  // 发送历史给AI
+                history: chatHistory
             })
         });
         const data = await res.json();
         chatBox.removeChild(loading);
         
-        // 把对话加入历史
         chatHistory.push({
             user: text,
             ai: data.reply
